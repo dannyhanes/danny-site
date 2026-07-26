@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Lock Card — Danny Hanes</title>
+  <meta name="description" content="Build a custom Home Assistant lock card with the Mushroom Template Card — track open, locked, unlocked, and low-battery states with dynamic icons and colors.">
+  <meta property="og:title" content="Custom Lock Card">
+  <meta property="og:description" content="Build a custom Home Assistant lock card with the Mushroom Template Card.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="https://dannyhanes.com/assets/images/lock-card.png">
+  <link rel="icon" type="image/png" href="../../assets/images/danny-laptop.png">
+  <script>(function(){try{var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);var h=localStorage.getItem('hue');if(h)document.documentElement.style.setProperty('--hue',h);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
+  <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="wordmark" href="../../"><img class="mark" src="../../assets/images/danny-laptop.png" alt="" width="420" height="420">Danny Hanes</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="../../blog/" aria-current="page">Blog</a>
+        <a href="../../about/">About</a>
+        <a href="../../career/">Career</a>
+        <a href="../../contact/">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <article>
+      <header class="article-header">
+        <div class="post-meta">
+          <span class="tag">Home Assistant</span>
+          <time datetime="2024-08-20">August 20, 2024</time>
+        </div>
+        <h1 class="page-title">Custom Lock Card</h1>
+        <p class="page-sub">For my mobile devices and home dashboard, the lock card in Home Assistant is invaluable in quickly checking the status of my home.</p>
+        <img class="article-hero" src="../../assets/images/lock-card.png" alt="Custom lock cards showing locked, unlocked, and open door states" width="1500" height="750">
+      </header>
+
+      <div class="prose">
+        <h2>Prerequisites</h2>
+        <ul>
+          <li><a href="https://github.com/piitaya/lovelace-mushroom">Mushroom</a> (Card)</li>
+          <li><a href="https://github.com/aFFekopp/noctis">Noctis</a> (Theme)</li>
+          <li>A lock that integrates with Home Assistant</li>
+          <li>A door sensor that integrates with Home Assistant</li>
+        </ul>
+
+        <h2>Overview</h2>
+        <p>In the example below, I am using the <a href="https://github.com/piitaya/lovelace-mushroom/blob/main/docs/cards/template.md">Mushroom Template Card</a> to build my own lock card. I wanted a way to track different states that my doors could be in, and report on them accordingly. I also wanted the ability to tap on the icon to lock or unlock the door.</p>
+        <p><strong>Tracked States</strong></p>
+        <ul>
+          <li>Closed &amp; Locked</li>
+          <li>Closed &amp; Unlocked</li>
+          <li>Open</li>
+          <li>Unavailable</li>
+          <li>Battery Low</li>
+        </ul>
+
+        <h2>Card Breakdown</h2>
+        <img src="../../assets/images/card-breakdown.png" alt="Breakdown of the parts of the lock card: badge icon, icon, primary and secondary information" width="1500" height="465">
+        <p>When you add the Mushroom Template Card to your Home Assistant dashboard, there are quite a few configurations that need to be filled out.</p>
+
+        <h3>Entity Used</h3>
+        <p>Select the lock you will be using. This will allow you to tap on the icon in order to lock and unlock your door.</p>
+        <img src="../../assets/images/mushroom-config.png" alt="Mushroom Template Card entity configuration field" width="627" height="174">
+
+        <h3>Icon</h3>
+        <p>Using if statements, we are going to check the state of both the open/close sensor, as well as the door lock. Based on those conditions we are going to change the icon.</p>
+        <blockquote>⚠️ The order of the if statement does matter. Because the first matched condition will be returned, we want to start with the least secure, and work our way up to most secure. For example, if we moved <em>if lock.back_door_lock, locked</em> to the top of the card, then someone could open the door but &ldquo;lock it&rdquo; which would then show as a secured door.</blockquote>
+        <div class="codeblock"><button class="copy-btn" type="button">Copy</button><pre><code>{% if is_state('binary_sensor.back_door', 'on') %}
+  mdi:door-open
+{% elif is_state('lock.back_door_lock', 'unlocked') %}
+  mdi:lock-open-variant
+{% elif is_state("lock.back_door_lock", "locked") %}
+  mdi:lock
+{% elif is_state("lock.back_door_lock", "unavailable") %}
+  mdi:alert-octagram
+{% endif %}</code></pre></div>
+
+        <h3>Icon Color</h3>
+        <p>We are using the same if statement as above, however this time instead of changing the icon, we will be changing the icon color.</p>
+        <div class="codeblock"><button class="copy-btn" type="button">Copy</button><pre><code>{% if is_state('binary_sensor.back_door', 'on') %}
+  #f73543
+{% elif is_state('lock.back_door_lock', 'unlocked') %}
+  #edbd2b
+{% elif is_state("lock.back_door_lock", "locked") %}
+  #00ca8b
+{% elif is_state("lock.back_door_lock", "unavailable") %}
+  #ff00d4
+{% endif %}</code></pre></div>
+
+        <h3>Primary Information</h3>
+        <p>Simply provide the user friendly name for the device. In my case, I am using <strong>Back Door</strong>.</p>
+
+        <h3>Secondary Information</h3>
+        <p>The Secondary Information on the card is where you are going to report the state of the door. Again we are going to use an if statement to make determinations about the door, working from least secure to most.</p>
+        <div class="codeblock"><button class="copy-btn" type="button">Copy</button><pre><code>{% if is_state('binary_sensor.back_door', 'on') %}
+  Open
+{% elif is_state('lock.back_door_lock', 'unlocked') %}
+  Unlocked
+{% elif is_state("lock.back_door_lock", "locked") %}
+  Locked
+{% endif %}</code></pre></div>
+
+        <h3>Badge Icon</h3>
+        <p>This is an optional step, but one I feel brings value. Using another if statement we are going to check the state of the lock battery level, and put a badge icon in place when the battery is low or at zero.</p>
+        <div class="codeblock"><button class="copy-btn" type="button">Copy</button><pre><code>{% if states('sensor.back_door_lock_battery_level') | float == 0 %}
+  mdi:battery-alert-variant-outline
+{% elif states('sensor.back_door_lock_battery_level') | float &lt;= 20 %}
+  mdi:battery-20
+{% else %}
+
+{% endif %}</code></pre></div>
+
+        <h3>Badge Color</h3>
+        <p>Again, relying on the battery level, we are going to change the color of the badge icon, letting us know the severity of the battery level.</p>
+        <div class="codeblock"><button class="copy-btn" type="button">Copy</button><pre><code>{% if states('sensor.back_door_lock_battery_level') | float == 0 %}
+  #f73543
+{% elif states('sensor.back_door_lock_battery_level') | float &lt;= 20 %}
+  #edbd2b
+{% else %}
+
+{% endif %}</code></pre></div>
+
+        <h3>Additional Options</h3>
+        <p>From here, you can adjust any of the additional toggles to your liking. If you want to get more complex, you can add additional functionality by setting the Hold Behavior or the Double Tap behavior.</p>
+
+        <h2>Complete Code Snippet</h2>
+        <p>If you want to simply copy and paste the entire code snippet, you can do so by adding a new card and choosing <strong>Manual</strong>. From there, simply copy and paste the below code and hit save. You will of course need to modify the code to match your sensors, but this should be a great jumping off point.</p>
+        <div class="codeblock"><button class="copy-btn" type="button">Copy</button><pre><code>type: custom:mushroom-template-card
+primary: Back Door
+icon: |-
+  {% if is_state('binary_sensor.back_door', 'on') %}
+    mdi:door-open
+  {% elif is_state('lock.back_door_lock', 'unlocked') %}
+    mdi:lock-open-variant
+  {% elif is_state("lock.back_door_lock", "locked") %}
+    mdi:lock
+  {% elif is_state("lock.back_door_lock", "unavailable") %}
+    mdi:alert-octagram
+  {% endif %}
+fill_container: false
+icon_color: |-
+  {% if is_state('binary_sensor.back_door', 'on') %}
+    #f73543
+  {% elif is_state('lock.back_door_lock', 'unlocked') %}
+    #edbd2b
+  {% elif is_state("lock.back_door_lock", "locked") %}
+    #00ca8b
+  {% elif is_state("lock.back_door_lock", "unavailable") %}
+    #ff00d4
+  {% endif %}
+entity: lock.back_door_lock
+secondary: |-
+  {% if is_state('binary_sensor.back_door', 'on') %}
+    Open
+  {% elif is_state('lock.back_door_lock', 'unlocked') %}
+    Unlocked
+  {% elif is_state("lock.back_door_lock", "locked") %}
+    Locked
+  {% endif %}
+hold_action:
+  action: more-info
+badge_icon: |-
+  {% if states('sensor.back_door_lock_battery_level') | float == 0 %}
+    mdi:battery-alert-variant-outline
+  {% elif states('sensor.back_door_lock_battery_level') | float &lt;= 20 %}
+    mdi:battery-20
+  {% else %}
+
+  {% endif %}
+badge_color: |-
+  {% if states('sensor.back_door_lock_battery_level') | float == 0 %}
+    #f73543
+  {% elif states('sensor.back_door_lock_battery_level') | float &lt;= 20 %}
+    #edbd2b
+  {% else %}
+
+  {% endif %}</code></pre></div>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="year">2026</span> Danny Hanes</p>
+    <div class="socials">
+      <a href="mailto:me@dannyhanes.com" aria-label="Email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m2.5 6.5 8.4 6.3a2 2 0 0 0 2.2 0l8.4-6.3"/></svg></a>
+      <a href="https://www.linkedin.com/in/dannyhanes/" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05a3.74 3.74 0 0 1 3.37-1.85c3.6 0 4.27 2.37 4.27 5.46zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12M7.12 20.45H3.56V9h3.56zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0"/></svg></a>
+      <a href="https://www.instagram.com/danny.hanes" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.6" cy="6.4" r="1.1" fill="currentColor" stroke="none"/></svg></a>
+    </div>
+  </footer>
+  <script src="../../assets/site.js" defer></script>
+</body>
+</html>
